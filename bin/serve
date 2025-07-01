@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+
+import { createServer } from 'http';
+import { readFile } from 'fs/promises';
+import { extname, join } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, '..');
+
+const PORT = process.env.PORT || 8080;
+
+const mimeTypes = {
+    '.html': 'text/html',
+    '.js': 'application/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon'
+};
+
+const server = createServer(async (req, res) => {
+    let filePath = join(projectRoot, 'app', req.url);
+    if (req.url === '/') {
+        filePath = join(projectRoot, 'app', 'index.html');
+    }
+
+    const ext = String(extname(filePath)).toLowerCase();
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+    try {
+        const content = await readFile(filePath);
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(content, 'utf-8');
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            res.writeHead(404, { 'Content-Type': 'text/html' });
+            res.end('<h1>404 - File Not Found</h1>', 'utf-8');
+        } else {
+            res.writeHead(500);
+            res.end('Sorry, there was an error: ' + error.code + ' ..\n');
+        }
+    }
+});
+
+server.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}/`);
+    console.log('Press Ctrl+C to stop the server');
+});

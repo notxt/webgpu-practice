@@ -1,0 +1,14 @@
+{
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "outDir": "./app/dist",
+    "rootDir": "./app/src",
+    "types": ["@webgpu/types"]
+  },
+  "include": ["app/src/**/*"],
+  "exclude": ["node_modules", "app/dist"]
+}

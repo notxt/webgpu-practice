@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Create log directory if it doesn't exist
+mkdir -p log
+
+# Get current timestamp for log file
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+LOG_FILE="log/server_${TIMESTAMP}.log"
+
+# Start TypeScript watch in background
+echo "Starting TypeScript compiler in watch mode..."
+./bin/watch &
+WATCH_PID=$!
+
+# Give TypeScript a moment to compile
+sleep 2
+
+# Start server with logging
+echo "Starting development server (logging to $LOG_FILE)..."
+node bin/serve >> "$LOG_FILE" 2>&1 &
+SERVER_PID=$!
+
+# Give server a moment to start
+sleep 1
+
+# Open browser
+echo "Opening browser..."
+node bin/open-browser &
+BROWSER_PID=$!
+
+# Function to cleanup on exit
+cleanup() {
+    echo -e "\nShutting down..."
+    kill $WATCH_PID 2>/dev/null
+    kill $SERVER_PID 2>/dev/null
+    kill $BROWSER_PID 2>/dev/null
+    exit 0
+}
+
+# Set up trap to cleanup on Ctrl+C
+trap cleanup INT
+
+# Development environment started
+echo -e "\nDevelopment environment started!"
+echo "Server logs: $LOG_FILE"
+echo "To monitor logs: tail -f $LOG_FILE"
+echo "To stop all processes: pkill -f 'tsc --watch' && pkill -f 'node bin/serve'"

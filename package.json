@@ -1,0 +1,19 @@
+{
+  "name": "webgpu-practice",
+  "version": "1.0.0",
+  "description": "Practice repo for learning WebGPU",
+  "type": "module",
+  "keywords": [
+    "webgpu",
+    "learning",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@tsconfig/strictest": "^2.0.5",
+    "@webgpu/types": "^0.1.40",
+    "playwright": "^1.53.2",
+    "typescript": "^5.3.0"
+  }
+}

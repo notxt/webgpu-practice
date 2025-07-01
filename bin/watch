@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "Starting TypeScript compiler in watch mode..."
+npx tsc --watch
