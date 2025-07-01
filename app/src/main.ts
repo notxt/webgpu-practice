@@ -1,52 +1,26 @@
-async function initWebGPU(): Promise<void> {
+import { initWebGPUDevice } from './webgpu/device.js';
+import { createRectangleRenderer } from './rectangle.js';
+
+async function main(): Promise<void> {
     const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement;
     const statusEl = document.getElementById('status') as HTMLDivElement;
     
-    if (!navigator.gpu) {
-        statusEl.textContent = 'WebGPU is not supported in this browser';
-        statusEl.className = 'error';
-        throw new Error('WebGPU not supported');
-    }
-    
     try {
-        const adapter = await navigator.gpu.requestAdapter();
-        if (!adapter) {
-            statusEl.textContent = 'Failed to get GPU adapter';
-            statusEl.className = 'error';
-            throw new Error('Failed to get GPU adapter');
-        }
+        statusEl.textContent = 'Initializing WebGPU...';
         
-        const device = await adapter.requestDevice();
+        // Initialize WebGPU device
+        const webgpu = await initWebGPUDevice(canvas);
         
-        const context = canvas.getContext('webgpu');
-        if (!context) {
-            statusEl.textContent = 'Failed to get WebGPU context';
-            statusEl.className = 'error';
-            throw new Error('Failed to get WebGPU context');
-        }
+        statusEl.textContent = 'Creating rectangle renderer...';
         
-        const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
-        context.configure({
-            device: device,
-            format: canvasFormat,
-        });
+        // Create rectangle renderer
+        const renderRectangle = await createRectangleRenderer(webgpu);
         
-        const encoder = device.createCommandEncoder();
-        
-        const pass = encoder.beginRenderPass({
-            colorAttachments: [{
-                view: context.getCurrentTexture().createView(),
-                loadOp: 'clear',
-                clearValue: { r: 0.0, g: 0.2, b: 0.4, a: 1.0 },
-                storeOp: 'store',
-            }],
-        });
-        
-        pass.end();
-        device.queue.submit([encoder.finish()]);
-        
-        statusEl.textContent = 'WebGPU initialized successfully!';
+        statusEl.textContent = 'WebGPU rectangle rendering active!';
         statusEl.className = 'success';
+        
+        // Render the rectangle
+        renderRectangle();
         
     } catch (error) {
         statusEl.textContent = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -55,4 +29,4 @@ async function initWebGPU(): Promise<void> {
     }
 }
 
-initWebGPU();
+main();
