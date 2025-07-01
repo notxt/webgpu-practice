@@ -47,7 +47,7 @@ export async function createShape(
     });
 
     // Load and compile shader
-    const shaderResponse = await fetch('/src/shaders/shapes.wgsl');
+    const shaderResponse = await fetch('src/shaders/shapes.wgsl');
     const shaderCode = await shaderResponse.text();
     const shaderModule = device.createShaderModule({ code: shaderCode });
 

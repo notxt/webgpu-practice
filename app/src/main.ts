@@ -1,5 +1,6 @@
 import { initWebGPUDevice } from './webgpu/device.js';
-import { createPaddle, createBall, createBrick, updateShapeTransform, renderShape } from './shapes.js';
+import { createBreakoutSpriteAtlas } from './sprite-atlas.js';
+import { createSpriteRenderer, renderSpriteWithName } from './sprite-renderer.js';
 
 async function main(): Promise<void> {
     const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement;
@@ -11,52 +12,69 @@ async function main(): Promise<void> {
         // Initialize WebGPU device
         const webgpu = await initWebGPUDevice(canvas);
         
-        statusEl.textContent = 'Creating shapes...';
+        statusEl.textContent = 'Creating sprite atlas...';
         
-        // Create all shapes
-        const paddle = await createPaddle(webgpu);
-        const ball = await createBall(webgpu);
-        const brick = await createBrick(webgpu);
+        // Create sprite atlas with all game sprites
+        const atlas = createBreakoutSpriteAtlas(webgpu.device);
         
-        statusEl.textContent = 'WebGPU functional shapes rendering active!';
+        // Log sprite atlas info for debugging
+        console.log('Atlas size:', atlas.atlasWidth, 'x', atlas.atlasHeight);
+        console.log('Available sprites:');
+        atlas.sprites.forEach((sprite, name) => {
+            console.log(`${name}: UV(${sprite.u.toFixed(3)}, ${sprite.v.toFixed(3)}) Size(${sprite.uWidth.toFixed(3)}, ${sprite.vHeight.toFixed(3)})`);
+        });
+        
+        // Create sprite renderer
+        const spriteRenderer = await createSpriteRenderer(webgpu, atlas);
+        
+        statusEl.textContent = 'Step 5: Sprite System Active!';
         statusEl.className = 'success';
         
-        // Set up transforms for each shape
-        updateShapeTransform(webgpu.device, paddle, {
-            position: [0.0, -0.8],     // Bottom center
-            scale: [1.0, 1.0],         // Normal size
-            color: [0.2, 0.8, 0.2]     // Green
-        });
-        
-        updateShapeTransform(webgpu.device, ball, {
-            position: [0.3, 0.2],      // Upper right
-            scale: [1.0, 1.0],         // Normal size
-            color: [1.0, 0.5, 0.1]     // Orange
-        });
-        
-        updateShapeTransform(webgpu.device, brick, {
-            position: [-0.3, 0.6],     // Upper left
-            scale: [1.0, 1.0],         // Normal size
-            color: [0.8, 0.2, 0.2]     // Red
-        });
-        
-        // Render all shapes
+        // Step 5: Render game objects using sprite atlas
         function renderFrame() {
             const commandEncoder = webgpu.device.createCommandEncoder();
             
             const renderPass = commandEncoder.beginRenderPass({
                 colorAttachments: [{
                     view: webgpu.context.getCurrentTexture().createView(),
-                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 }, // Dark gray background
+                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
                     loadOp: 'clear',
                     storeOp: 'store',
                 }],
             });
 
-            // Render shapes using functional approach
-            renderShape(renderPass, paddle);
-            renderShape(renderPass, ball);
-            renderShape(renderPass, brick);
+            // Render paddle at bottom
+            renderSpriteWithName(webgpu.device, renderPass, spriteRenderer, 'paddle', {
+                position: [0.0, -0.7],
+                scale: [0.4, 0.08],
+                color: [1.0, 1.0, 1.0]  // White (natural color)
+            });
+            
+            // Render ball in center
+            renderSpriteWithName(webgpu.device, renderPass, spriteRenderer, 'ball', {
+                position: [0.0, 0.0],
+                scale: [0.06, 0.06],
+                color: [1.0, 1.0, 1.0]  // White (natural color)
+            });
+            
+            // Render some bricks at top
+            renderSpriteWithName(webgpu.device, renderPass, spriteRenderer, 'brick_blue', {
+                position: [-0.3, 0.5],
+                scale: [0.15, 0.08],
+                color: [1.0, 1.0, 1.0]  // White (natural color)
+            });
+            
+            renderSpriteWithName(webgpu.device, renderPass, spriteRenderer, 'brick_green', {
+                position: [0.0, 0.5],
+                scale: [0.15, 0.08],
+                color: [1.0, 1.0, 1.0]  // White (natural color)
+            });
+            
+            renderSpriteWithName(webgpu.device, renderPass, spriteRenderer, 'brick_yellow', {
+                position: [0.3, 0.5],
+                scale: [0.15, 0.08],
+                color: [1.0, 1.0, 1.0]  // White (natural color)
+            });
 
             renderPass.end();
             webgpu.device.queue.submit([commandEncoder.finish()]);
