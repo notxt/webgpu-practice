@@ -1,7 +1,7 @@
 import { WebGPUDevice } from './webgpu/device.js';
 import { createSampler } from './webgpu/texture.js';
 import { SpriteAtlas, SpriteInfo } from './sprite-atlas.js';
-import { Transform } from './shapes.js';
+import { mat3FromTransform } from './math/mat3.js';
 
 // Sprite render data
 export interface SpriteRenderer {
@@ -50,7 +50,7 @@ export async function createSpriteRenderer(
 
     // Create uniform buffers
     const transformBuffer = device.createBuffer({
-        size: 32, // Transform struct size
+        size: 64, // Transform struct: 3x3 matrix (48 bytes) + color (16 bytes) = 64 bytes
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -142,22 +142,40 @@ export async function createSpriteRenderer(
     };
 }
 
-// Update sprite transform
+// Sprite transform with matrix support
+export interface SpriteTransform {
+    position: [number, number];
+    rotation?: number;  // Angle in radians
+    scale: [number, number];
+    color: [number, number, number];
+}
+
+// Update sprite transform using matrix
 export function updateSpriteTransform(
     device: GPUDevice,
     renderer: SpriteRenderer,
-    transform: Transform
+    transform: SpriteTransform
 ): void {
-    // Pack transform data
-    const data = new Float32Array(8); // 32 bytes / 4 = 8 floats
-    data[0] = transform.position[0];
-    data[1] = transform.position[1];
-    data[2] = transform.scale[0];
-    data[3] = transform.scale[1];
-    data[4] = transform.color[0];
-    data[5] = transform.color[1];
-    data[6] = transform.color[2];
-    // data[7] is padding
+    // Create transformation matrix
+    const matrix = mat3FromTransform(
+        transform.position[0],
+        transform.position[1],
+        transform.rotation || 0,
+        transform.scale[0],
+        transform.scale[1]
+    );
+
+    // Pack transform data: matrix (48 bytes) + color (16 bytes) = 64 bytes
+    const data = new Float32Array(16); // 64 bytes / 4 = 16 floats
+    
+    // Copy matrix data (3x3 matrix with padding)
+    data.set(matrix, 0); // Copies all 12 floats (including padding)
+    
+    // Add color data at offset 12
+    data[12] = transform.color[0];
+    data[13] = transform.color[1];
+    data[14] = transform.color[2];
+    // data[15] is padding
 
     device.queue.writeBuffer(renderer.transformBuffer, 0, data);
 }
@@ -196,17 +214,18 @@ export function renderSpriteWithName(
     renderPass: GPURenderPassEncoder,
     renderer: SpriteRenderer,
     spriteName: string,
-    transform: Transform
+    transform: SpriteTransform
 ): void {
     const sprite = renderer.atlas.sprites.get(spriteName);
     if (!sprite) {
         console.warn(`Sprite '${spriteName}' not found in atlas`);
         return;
     }
+    
 
     // Create dedicated uniform buffers for this sprite instance
     const transformBuffer = device.createBuffer({
-        size: 32, // Transform struct size
+        size: 64, // Transform struct: matrix + color = 64 bytes
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -215,16 +234,26 @@ export function renderSpriteWithName(
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    // Pack transform data
-    const transformData = new Float32Array(8); // 32 bytes / 4 = 8 floats
-    transformData[0] = transform.position[0];
-    transformData[1] = transform.position[1];
-    transformData[2] = transform.scale[0];
-    transformData[3] = transform.scale[1];
-    transformData[4] = transform.color[0];
-    transformData[5] = transform.color[1];
-    transformData[6] = transform.color[2];
-    // transformData[7] is padding
+    // Create transformation matrix
+    const matrix = mat3FromTransform(
+        transform.position[0],
+        transform.position[1],
+        transform.rotation || 0,
+        transform.scale[0],
+        transform.scale[1]
+    );
+
+    // Pack transform data: matrix (48 bytes) + color (16 bytes) = 64 bytes
+    const transformData = new Float32Array(16); // 64 bytes / 4 = 16 floats
+    
+    // Copy matrix data (3x3 matrix with padding)
+    transformData.set(matrix, 0); // Copies all 12 floats (including padding)
+    
+    // Add color data at offset 12
+    transformData[12] = transform.color[0];
+    transformData[13] = transform.color[1];
+    transformData[14] = transform.color[2];
+    // transformData[15] is padding
 
     // Pack sprite UV data
     const uvData = new Float32Array(4); // 16 bytes / 4 = 4 floats

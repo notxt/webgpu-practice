@@ -1,8 +1,16 @@
 // Transform uniform buffer
 struct Transform {
-    position: vec2f,
-    scale: vec2f,
+    // 3x3 transformation matrix in column-major order
+    // Each column is padded to vec4 for alignment
+    matrix_col0: vec3f,
+    _pad0: f32,
+    matrix_col1: vec3f,
+    _pad1: f32,
+    matrix_col2: vec3f,
+    _pad2: f32,
+    // Sprite color tint
     color: vec3f,
+    _pad3: f32,
 }
 
 // Sprite UV mapping uniform
@@ -29,14 +37,21 @@ struct VertexOutput {
     @location(1) color: vec3f,
 }
 
-// Vertex shader - applies transform and maps texture coordinates to sprite region
+// Vertex shader - applies transform matrix and maps texture coordinates to sprite region
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     
-    // Apply scale and translation
-    let scaled_pos = input.position * transform.scale;
-    let world_pos = scaled_pos + transform.position;
+    // Apply 3x3 transformation matrix
+    let col0 = transform.matrix_col0;
+    let col1 = transform.matrix_col1;
+    let col2 = transform.matrix_col2;
+    
+    // Transform position: matrix * [x, y, 1]
+    let world_pos = vec2f(
+        col0.x * input.position.x + col1.x * input.position.y + col2.x,
+        col0.y * input.position.x + col1.y * input.position.y + col2.y
+    );
     
     output.position = vec4f(world_pos, 0.0, 1.0);
     
