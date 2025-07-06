@@ -1,11 +1,11 @@
 // Input handling for game controls
 // Functional approach for keyboard input state
 
-export interface InputState {
+export type InputState = {
     keys: Set<string>;
     mouseX: number;
     mouseY: number;
-}
+};
 
 // Create initial input state
 export function createInputState(): InputState {

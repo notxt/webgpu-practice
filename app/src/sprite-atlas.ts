@@ -1,5 +1,5 @@
 // Sprite definition in atlas
-export interface SpriteInfo {
+export type SpriteInfo = {
     name: string;
     x: number;      // Pixel coordinates in atlas
     y: number;
@@ -9,15 +9,15 @@ export interface SpriteInfo {
     v: number;
     uWidth: number;
     vHeight: number;
-}
+};
 
 // Sprite atlas data
-export interface SpriteAtlas {
+export type SpriteAtlas = {
     texture: GPUTexture;
     sprites: Map<string, SpriteInfo>;
     atlasWidth: number;
     atlasHeight: number;
-}
+};
 
 // Create a sprite atlas with procedurally generated sprites
 export function createBreakoutSpriteAtlas(device: GPUDevice): SpriteAtlas {

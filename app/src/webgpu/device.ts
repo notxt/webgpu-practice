@@ -1,8 +1,8 @@
-export interface WebGPUDevice {
+export type WebGPUDevice = {
     device: GPUDevice;
     context: GPUCanvasContext;
     format: GPUTextureFormat;
-}
+};
 
 export async function initWebGPUDevice(canvas: HTMLCanvasElement): Promise<WebGPUDevice> {
     if (!navigator.gpu) {

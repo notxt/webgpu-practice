@@ -4,7 +4,7 @@ import { SpriteAtlas, SpriteInfo } from './sprite-atlas.js';
 import { mat3FromTransform } from './math/mat3.js';
 
 // Sprite render data
-export interface SpriteRenderer {
+export type SpriteRenderer = {
     pipeline: GPURenderPipeline;
     vertexBuffer: GPUBuffer;
     indexBuffer: GPUBuffer;
@@ -13,7 +13,7 @@ export interface SpriteRenderer {
     bindGroup: GPUBindGroup;
     sampler: GPUSampler;
     atlas: SpriteAtlas;
-}
+};
 
 // Create sprite rendering system
 export async function createSpriteRenderer(
@@ -143,12 +143,12 @@ export async function createSpriteRenderer(
 }
 
 // Sprite transform with matrix support
-export interface SpriteTransform {
+export type SpriteTransform = {
     position: [number, number];
     rotation?: number;  // Angle in radians
     scale: [number, number];
     color: [number, number, number];
-}
+};
 
 // Update sprite transform using matrix
 export function updateSpriteTransform(
